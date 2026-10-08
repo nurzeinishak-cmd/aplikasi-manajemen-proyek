@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uji Logika - Manajemen Proyek Gantt</title>
+<style>
+  body{margin:0;padding:24px;background:#eef2f7;color:#0f172a;
+    font:14px/1.55 "Segoe UI",system-ui,Roboto,Arial,sans-serif}
+  .card{max-width:840px;margin:0 auto;background:#fff;border:1px solid #d5dbe5;
+    border-radius:14px;padding:22px 24px;box-shadow:0 10px 28px rgba(15,23,42,.07)}
+  h1{margin:0 0 4px;font-size:19px}
+  p.sub{margin:0 0 16px;color:#64748b;font-size:13px}
+  .summary{padding:10px 14px;border-radius:10px;font-weight:700;font-size:14px;margin-bottom:14px}
+  .summary.ok{background:#dcfce7;color:#15803d}
+  .summary.fail{background:#fee2e2;color:#b91c1c}
+  ul{list-style:none;margin:0;padding:0}
+  li{display:flex;gap:10px;align-items:flex-start;padding:7px 9px;border-bottom:1px solid #e5e9f0;font-size:13px}
+  li:last-child{border-bottom:0}
+  .mark{flex:0 0 auto;font-weight:800}
+  .pass .mark{color:#16a34a}
+  .fail .mark{color:#dc2626}
+  .ket{color:#64748b}
+  .fail .ket{color:#b91c1c}
+  a{color:#2563eb}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>Halaman Uji Logika Aplikasi</h1>
+  <p class="sub">Menjalankan pengujian otomatis untuk fungsi inti di <code>app.js</code> (tanggal, hari kerja, kalender proyek, predecessor &amp; penjadwalan, pohon tugas, resource management, critical path &amp; PERT, penyimpanan).
+  Kembali ke <a href="index.html">halaman utama</a>.</p>
+  <div class="summary" id="summary">Menjalankan uji&hellip;</div>
+  <ul id="results"></ul>
+</div>
+<script src="app.js"></script>
+<script src="uji.js"></script>
+</body>
+</html>

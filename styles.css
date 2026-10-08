@@ -1,0 +1,454 @@
+/* ==========================================================
+   Manajemen Proyek - Gantt Chart
+   ========================================================== */
+:root{
+  --bg:#eef2f7;
+  --panel:#ffffff;
+  --ink:#0f172a;
+  --muted:#64748b;
+  --line:#e5e9f0;
+  --line-strong:#d5dbe5;
+  --primary:#2563eb;
+  --primary-dark:#1d4ed8;
+  --danger:#dc2626;
+  --col-w:36px;
+  --row-h:40px;
+  --head-h:58px;
+  --week-w:252px;
+  --grid-day:rgba(148,163,184,.30);
+  --grid-week:rgba(100,116,139,.45);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font:14px/1.5 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+[hidden]{display:none !important}
+button{font-family:inherit}
+.muted{color:var(--muted);font-weight:500}
+.noscript{padding:16px 20px;color:#b91c1c}
+
+/* ---------- Topbar ---------- */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  flex-wrap:wrap;padding:14px 20px 8px;
+}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.logo{
+  width:42px;height:42px;border-radius:12px;flex:0 0 auto;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;
+  box-shadow:0 6px 16px rgba(37,99,235,.35);
+}
+.brand-text h1{margin:0;font-size:18px;line-height:1.25;letter-spacing:-.2px}
+.brand-text p{margin:0;font-size:12.5px;color:var(--muted)}
+.topbar-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---------- Tombol ---------- */
+.btn{
+  border:1px solid transparent;border-radius:10px;cursor:pointer;
+  padding:9px 15px;font-size:13px;font-weight:600;line-height:1;
+  display:inline-flex;align-items:center;gap:7px;
+  transition:background .15s ease,box-shadow .15s ease,transform .05s ease;
+}
+.btn:active{transform:translateY(1px)}
+.btn.primary{background:var(--primary);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.32)}
+.btn.primary:hover{background:var(--primary-dark)}
+.btn.ghost{background:#fff;border-color:var(--line-strong);color:#334155}
+.btn.ghost:hover{background:#f1f5f9}
+.btn.tiny{padding:6px 10px;font-size:12px;border-radius:8px}
+.btn.danger-ghost{background:#fff;border-color:#fecaca;color:#b91c1c}
+.btn.danger-ghost:hover{background:#fee2e2}
+.btn:focus-visible,.icon-btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+/* ---------- Pemberitahuan & statistik ---------- */
+.notice{
+  margin:6px 20px 0;padding:10px 14px;border-radius:10px;font-size:13px;
+  background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;
+}
+.stats{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:8px 20px;
+}
+.stats-info{font-size:13px;color:var(--muted)}
+.stats-info strong{color:var(--ink)}
+.stats-actions{display:flex;align-items:center;gap:14px}
+.legend{display:flex;gap:10px;font-size:12px;color:var(--muted)}
+.legend-item{display:inline-flex;align-items:center;gap:5px}
+.legend-item i{width:9px;height:9px;border-radius:50%;display:inline-block}
+
+/* ---------- Area Gantt ---------- */
+.wrap{padding:0 20px 18px}
+.gantt{
+  position:relative;display:flex;
+  height:calc(100vh - 150px);min-height:420px;
+  background:var(--panel);
+  border:1px solid var(--line-strong);border-radius:14px;
+  overflow:hidden;box-shadow:0 10px 28px rgba(15,23,42,.07);
+}
+.gantt-left{
+  flex:0 0 400px;display:flex;flex-direction:column;min-width:0;
+  border-right:1px solid var(--line-strong);background:var(--panel);
+}
+.gantt-left-head{
+  height:var(--head-h);flex:0 0 auto;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:0 12px;border-bottom:1px solid var(--line-strong);
+  background:#f8fafc;font-weight:700;font-size:13px;
+}
+/* padding-bottom menyeimbangkan tinggi scrollbar horizontal di panel timeline */
+.gantt-left-body{flex:1;overflow:hidden;padding-bottom:12px}
+.gantt-right{flex:1;min-width:0;overflow:auto;background:var(--panel)}
+.gantt-inner{position:relative;width:100%;min-width:100%}
+.gantt-head{
+  position:sticky;top:0;z-index:6;
+  height:var(--head-h);background:#f8fafc;
+}
+.months{display:flex;height:26px}
+.month{
+  flex:0 0 auto;border-right:1px solid var(--line-strong);
+  padding:0 8px;font-size:10.5px;font-weight:700;letter-spacing:.5px;
+  text-transform:uppercase;color:#475569;background:#f8fafc;
+  display:flex;align-items:center;justify-content:center;
+  overflow:hidden;white-space:nowrap;
+}
+.days{display:flex;height:32px;border-top:1px solid var(--line);border-bottom:1px solid var(--line-strong)}
+.day{
+  flex:0 0 auto;border-right:1px solid var(--line);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#fff;line-height:1.05;
+}
+.day .dnum{font-size:12px;font-weight:600;color:#334155}
+.day .dw{font-size:9px;color:#94a3b8;letter-spacing:.2px}
+.day.we{background:#f1f5f9}
+.day.we .dnum{color:#94a3b8}
+.day.today{background:#fee2e2}
+.day.today .dnum{color:#b91c1c;font-weight:800}
+.day.today .dw{color:#dc2626;font-weight:700}
+.day.holiday{background:#ffedd5}
+.day.holiday .dnum{color:#c2410c;font-weight:800}
+.day.holiday .dw{color:#ea580c;font-weight:700}
+
+.gantt-rows{position:relative}
+.gantt-row{
+  position:relative;height:var(--row-h);
+  border-bottom:1px solid var(--line);
+  background-image:
+    repeating-linear-gradient(to right,var(--grid-day) 0,var(--grid-day) 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) var(--col-w)),
+    repeating-linear-gradient(to right,var(--grid-week) 0,var(--grid-week) 1px,rgba(0,0,0,0) 1px,rgba(0,0,0,0) var(--week-w));
+}
+/* Kolom hari non-kerja (akhir pekan & hari libur) dari Kalender Proyek */
+.nc-col{
+  position:absolute;top:0;bottom:0;width:var(--col-w);
+  background:rgba(148,163,184,.20);
+  pointer-events:none;z-index:0;
+}
+.nc-col.holiday{background:rgba(251,146,60,.24)}
+/* Garis penghubung predecessor (FS / SS) */
+.link-svg{
+  position:absolute;top:0;left:0;
+  pointer-events:none;z-index:3;
+  overflow:visible;
+}
+.link{fill:none;stroke:#818cf8;stroke-width:1.6;stroke-linejoin:round;pointer-events:stroke}
+.link.ss{stroke-dasharray:5 3;stroke:#a78bfa}
+.arw-head{fill:#818cf8}
+.arw-head.ss{fill:#a78bfa}
+.bar{
+  position:absolute;top:9px;height:22px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0 6px;color:#fff;font-size:11px;font-weight:700;
+  cursor:pointer;overflow:hidden;white-space:nowrap;z-index:2;
+  background-image:linear-gradient(180deg,rgba(255,255,255,.30),rgba(255,255,255,0) 68%);
+  box-shadow:0 1px 2px rgba(15,23,42,.35);
+  transition:filter .15s ease,box-shadow .15s ease;
+}
+.bar.bar-parent{top:7px;height:26px}
+.bar:hover{filter:saturate(1.15) brightness(1.06);box-shadow:0 3px 9px rgba(15,23,42,.35)}
+.bar:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.bar-label{text-shadow:0 1px 1px rgba(0,0,0,.4)}
+.today-line{
+  position:absolute;width:2px;background:#ef4444;opacity:.85;
+  z-index:4;pointer-events:none;
+}
+.today-line::after{
+  content:"";position:absolute;top:0;left:-3px;
+  width:8px;height:8px;border-radius:50%;background:#ef4444;
+}
+
+/* ---------- Baris tugas (panel kiri) ---------- */
+.task-row{
+  display:flex;align-items:center;gap:6px;
+  height:var(--row-h);padding:0 8px 0 6px;
+  border-bottom:1px solid var(--line);min-width:0;
+}
+.task-row:hover{background:#f8fafc}
+.toggle{
+  flex:0 0 20px;width:20px;height:20px;padding:0;
+  border:0;background:transparent;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;color:var(--muted);
+}
+.toggle:hover{background:#e2e8f0;color:var(--ink)}
+.toggle svg{transition:transform .15s ease}
+.toggle[aria-expanded="true"] svg{transform:rotate(90deg)}
+.toggle-spacer{flex:0 0 20px;display:block}
+.indent{flex:0 0 auto;display:block}
+.dot{
+  flex:0 0 10px;width:10px;height:10px;border-radius:50%;
+  box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(15,23,42,.10);
+}
+.task-name{
+  flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  cursor:pointer;
+}
+.task-name:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px}
+.task-row.parent .task-name{font-weight:700}
+.badge{flex:0 0 auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;letter-spacing:.3px}
+.badge.rendah{background:#dcfce7;color:#15803d}
+.badge.sedang{background:#fef3c7;color:#b45309}
+.badge.tinggi{background:#fee2e2;color:#b91c1c}
+.meta{flex:0 0 auto;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.meta-dur{min-width:44px;text-align:right}
+.meta-date{min-width:36px;text-align:right}
+.row-actions{flex:0 0 auto;display:flex;gap:2px;opacity:.35;transition:opacity .12s ease}
+.task-row:hover .row-actions,.task-row:focus-within .row-actions{opacity:1}
+.row-actions button{
+  width:24px;height:24px;padding:0;border:0;background:transparent;
+  border-radius:6px;cursor:pointer;color:#475569;
+  display:flex;align-items:center;justify-content:center;
+}
+.row-actions button:hover{background:#e2e8f0;color:var(--ink)}
+.row-actions button.del:hover{background:#fee2e2;color:#b91c1c}
+
+/* ---------- Status kosong ---------- */
+.empty-overlay{
+  position:absolute;inset:0;z-index:10;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(255,255,255,.84);backdrop-filter:blur(2px);
+}
+.empty-card{
+  max-width:420px;text-align:center;background:#fff;
+  border:1px solid var(--line-strong);border-radius:16px;
+  padding:26px 26px 24px;box-shadow:0 16px 40px rgba(15,23,42,.12);
+}
+.empty-card h2{margin:0 0 6px;font-size:17px}
+.empty-card p{margin:0 0 16px;font-size:13.5px;color:var(--muted)}
+.empty-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.hint-bar{margin:10px 2px 0;text-align:center;font-size:12.5px;color:var(--muted)}
+.hint-bar b{color:#334155}
+
+/* ---------- Notifikasi toast ---------- */
+.toast{
+  position:fixed;left:50%;bottom:26px;transform:translateX(-50%);
+  background:#0f172a;color:#fff;padding:10px 18px;border-radius:999px;
+  font-size:13px;font-weight:600;z-index:60;
+  box-shadow:0 10px 30px rgba(15,23,42,.4);
+  animation:toastIn .2s ease;
+}
+.toast.error{background:#b91c1c}
+@keyframes toastIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* ---------- Scrollbar Gantt ---------- */
+.gantt-right::-webkit-scrollbar{width:12px;height:12px}
+.gantt-right::-webkit-scrollbar-track{background:#f1f5f9}
+.gantt-right::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px;border:3px solid #f1f5f9}
+.gantt-right::-webkit-scrollbar-thumb:hover{background:#94a3b8}
+
+/* ---------- Modal form tugas ---------- */
+.modal-overlay{
+  position:fixed;inset:0;z-index:50;
+  display:flex;align-items:center;justify-content:center;padding:20px;
+  background:rgba(15,23,42,.55);backdrop-filter:blur(3px);
+  animation:fadeIn .15s ease;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{
+  width:100%;max-width:530px;max-height:90vh;overflow-y:auto;
+  background:#fff;border-radius:16px;
+  box-shadow:0 24px 60px rgba(15,23,42,.35);
+  animation:popIn .18s ease;
+}
+@keyframes popIn{from{opacity:0;transform:translateY(10px) scale(.98)}to{opacity:1;transform:none}}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:16px 18px;border-bottom:1px solid var(--line);
+}
+.modal-head h2{margin:0;font-size:16px}
+.icon-btn{
+  width:30px;height:30px;border:0;border-radius:8px;background:transparent;
+  cursor:pointer;font-size:15px;color:var(--muted);
+  display:flex;align-items:center;justify-content:center;
+}
+.icon-btn:hover{background:#f1f5f9;color:var(--ink)}
+#taskForm{padding:16px 18px 18px}
+.field{margin-bottom:13px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{display:block;font-size:12.5px;font-weight:600;color:#475569;margin-bottom:5px}
+input[type=text],input[type=date],input[type=number],select{
+  width:100%;padding:9px 11px;
+  border:1px solid var(--line-strong);border-radius:10px;
+  background:#fff;color:var(--ink);
+  font-family:inherit;font-size:14px;
+}
+input:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.field-error{margin:5px 0 0;font-size:12px;color:#dc2626;font-weight:600}
+.preview{
+  margin:0 0 14px;padding:9px 12px;
+  background:#f8fafc;border:1px dashed var(--line-strong);border-radius:10px;
+  font-size:12.5px;color:#475569;
+}
+.preview strong{color:var(--ink)}
+.preview .warn{color:#b45309;font-weight:700}
+.color-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.swatches{display:flex;gap:6px;flex-wrap:wrap}
+.swatch{
+  width:22px;height:22px;padding:0;border-radius:50%;cursor:pointer;
+  border:2px solid #fff;box-shadow:0 0 0 1px var(--line-strong);
+  transition:transform .1s ease;
+}
+.swatch:hover{transform:scale(1.12)}
+.swatch.active{box-shadow:0 0 0 2px var(--ink);transform:scale(1.08)}
+input[type=color]{
+  width:46px;height:32px;padding:3px;
+  border:1px solid var(--line-strong);border-radius:8px;
+  background:#fff;cursor:pointer;
+}
+.modal-actions{
+  display:flex;justify-content:flex-end;gap:8px;
+  margin-top:16px;padding-top:14px;border-top:1px solid var(--line);
+}
+
+/* ---------- Daftar predecessor (form) ---------- */
+.hint-text{margin:6px 0 0;font-size:12px;color:var(--muted);line-height:1.45}
+.pred-list{display:flex;flex-direction:column;gap:8px}
+.pred-list .hint-text{margin:0;color:var(--muted)}
+.pred-row{display:grid;grid-template-columns:1fr 76px 82px 30px;gap:6px;align-items:center}
+.pred-row select,.pred-row input{padding:7px 9px;font-size:13px}
+.pred-delay{text-align:center}
+.pred-del{
+  width:30px;height:32px;border:0;border-radius:8px;
+  background:#fef2f2;color:#b91c1c;cursor:pointer;font-size:16px;line-height:1;
+}
+.pred-del:hover{background:#fee2e2}
+.pred-add{margin-top:8px}
+
+/* ---------- Kalender Proyek ---------- */
+.cal-body{padding:16px 18px 18px}
+.weekend-grid{display:flex;flex-wrap:wrap;gap:7px}
+.wd-chip{
+  display:inline-flex;align-items:center;gap:6px;margin:0;
+  padding:7px 11px;border:1px solid var(--line-strong);border-radius:999px;
+  background:#fff;font-size:13px;font-weight:600;color:#475569;cursor:pointer;
+}
+.wd-chip input{margin:0;accent-color:var(--primary)}
+.wd-chip.on{background:#fee2e2;border-color:#fca5a5;color:#b91c1c}
+.holiday-form{display:flex;gap:8px;flex-wrap:wrap}
+.holiday-form input[type=date]{flex:0 0 152px}
+.holiday-form input[type=text]{flex:1;min-width:150px}
+.holiday-list{list-style:none;margin:10px 0 0;padding:0;max-height:170px;overflow-y:auto}
+.holiday-list li{
+  display:flex;align-items:center;gap:8px;padding:7px 9px;
+  border:1px solid var(--line);border-radius:8px;margin-bottom:6px;font-size:13px;
+}
+.holiday-list li.empty{color:var(--muted);border-style:dashed}
+.hol-date{font-weight:700;flex:0 0 auto}
+.hol-name{color:var(--muted);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hol-del{
+  width:24px;height:24px;border:0;border-radius:6px;background:transparent;
+  color:#b91c1c;cursor:pointer;font-size:16px;line-height:1;
+}
+.hol-del:hover{background:#fee2e2}
+.legend-item i.nc-key{background:#cbd5e1;border-radius:3px}
+
+/* ---------- Penanda jalur kritis di Gantt ---------- */
+.bar.critical{
+  box-shadow:0 0 0 2px #ef4444,0 2px 6px rgba(239,68,68,.35);
+}
+.bar.critical:hover{box-shadow:0 0 0 2px #ef4444,0 4px 10px rgba(239,68,68,.45)}
+
+/* ---------- Alokasi anggota (form tugas) ---------- */
+.res-list{display:flex;flex-wrap:wrap;gap:7px}
+.res-chip{
+  display:inline-flex;align-items:center;gap:7px;margin:0;
+  padding:6px 11px;border:1px solid var(--line-strong);border-radius:999px;
+  background:#fff;font-size:12.5px;font-weight:600;color:#475569;cursor:pointer;
+}
+.res-chip input{margin:0;accent-color:var(--primary)}
+.res-chip .res-role{font-weight:500;color:var(--muted);font-size:11.5px}
+.res-chip.on{background:#dbeafe;border-color:#93c5fd;color:#1d4ed8}
+.res-chip.on .res-role{color:#3b82f6}
+
+/* ---------- Modal Tim Proyek ---------- */
+.member-buttons{display:flex;align-items:flex-end;gap:8px;padding-bottom:2px}
+.member-list{list-style:none;margin:0;padding:0;max-height:230px;overflow-y:auto}
+.member-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 10px;border:1px solid var(--line);border-radius:10px;margin-bottom:7px;
+}
+.member-item:hover{background:#f8fafc;border-color:var(--line-strong)}
+.member-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.member-name{font-weight:700;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.member-role{font-size:12px;color:#475569}
+.member-email{font-size:11.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.member-side{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.member-salary{font-size:13px;font-weight:700;color:#15803d;font-variant-numeric:tabular-nums}
+.member-salary small{font-weight:500;color:var(--muted);font-size:10.5px}
+.member-alloc{font-size:11px;color:var(--muted)}
+.member-actions{flex:0 0 auto;opacity:1}
+.member-list li.empty{color:var(--muted);border-style:dashed;justify-content:center;text-align:center}
+
+/* ---------- Modal Analisis Proyek ---------- */
+.analysis-modal{max-width:940px}
+.analysis-summary{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:14px}
+.chip{
+  display:flex;flex-direction:column;gap:2px;
+  padding:8px 13px;background:#f8fafc;border:1px solid var(--line-strong);
+  border-radius:10px;min-width:118px;
+}
+.chip-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.chip-value{font-size:14px;font-weight:700;color:var(--ink)}
+.section-title{
+  margin:16px 0 8px;font-size:13.5px;letter-spacing:.3px;text-transform:uppercase;color:#475569;
+  border-bottom:1px solid var(--line);padding-bottom:6px;
+}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+.crit-table{width:100%;border-collapse:collapse;font-size:13px}
+.crit-table th{
+  text-align:left;padding:9px 11px;background:#f8fafc;color:#475569;font-size:11.5px;
+  text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid var(--line-strong);
+}
+.crit-table td{padding:8px 11px;border-bottom:1px solid var(--line)}
+.crit-table tr:last-child td{border-bottom:0}
+.crit-table td .dot{display:inline-block;margin-right:7px;vertical-align:middle}
+.crit-table td.empty-cell{color:var(--muted);text-align:center;padding:16px}
+.pert-box{
+  overflow:auto;max-height:340px;border:1px solid var(--line);
+  border-radius:10px;background:#fff;
+}
+.pert-svg{display:block}
+.pert-node rect{fill:#fff;stroke:#cbd5e1;stroke-width:1.5}
+.pert-node.crit rect{fill:#fef2f2;stroke:#ef4444;stroke-width:2}
+.pn-name{font-size:12.5px;font-weight:700;fill:#0f172a}
+.pn-meta{font-size:11px;fill:#64748b}
+.pn-float{font-size:10.5px;fill:#94a3b8;font-weight:600}
+.pn-float.crit{fill:#dc2626;font-weight:700}
+.pert-edge{fill:none;stroke:#94a3b8;stroke-width:1.5}
+.pert-edge.ss{stroke:#a78bfa;stroke-dasharray:5 3}
+.pert-edge-label{font-size:10px;fill:#64748b;font-weight:700}
+.pert-arw-head{fill:#94a3b8}
+
+/* ---------- Layar kecil ---------- */
+@media (max-width:900px){
+  .gantt-left{flex:0 0 250px}
+  .meta-date{display:none}
+  .gantt{height:calc(100vh - 155px);min-height:360px}
+  .topbar{padding:12px 14px 6px}
+  .wrap{padding:0 14px 14px}
+  .stats{padding:6px 14px}
+  .grid-2{grid-template-columns:1fr}
+}

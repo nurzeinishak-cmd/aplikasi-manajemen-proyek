@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manajemen Proyek - Gantt Chart</title>
+<meta name="description" content="Aplikasi manajemen proyek berbasis Gantt Chart statis dengan penyimpanan localStorage.">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M3 6h9M3 12h13M3 18h7"></path>
+        <circle cx="18" cy="6" r="2.4" fill="currentColor" stroke="none"></circle>
+        <circle cx="20" cy="18" r="2.4" fill="currentColor" stroke="none"></circle>
+      </svg>
+    </span>
+    <div class="brand-text">
+      <h1>Manajemen Proyek</h1>
+      <p>Perencanaan tugas dengan Gantt Chart</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <button type="button" class="btn ghost" id="btnTeam">Tim Proyek</button>
+    <button type="button" class="btn ghost" id="btnCalendar">Kalender Proyek</button>
+    <button type="button" class="btn ghost" id="btnAnalysis">Analisis Proyek</button>
+    <button type="button" class="btn ghost" id="btnToday">Hari Ini</button>
+    <button type="button" class="btn primary" id="btnAdd">Tambah Tugas</button>
+  </div>
+</header>
+
+<div class="notice" id="storageNotice" hidden role="alert">
+  Penyimpanan browser (localStorage) tidak tersedia. Data hanya akan bertahan selama tab ini dibuka.
+</div>
+
+<section class="stats">
+  <div class="stats-info" id="statsInfo">Memuat data&hellip;</div>
+  <div class="stats-actions">
+    <span class="legend" aria-hidden="true">
+      <span class="legend-item"><i style="background:#ef4444"></i>Tinggi</span>
+      <span class="legend-item"><i style="background:#f59e0b"></i>Sedang</span>
+      <span class="legend-item"><i style="background:#22c55e"></i>Rendah</span>
+      <span class="legend-item"><i class="nc-key"></i>Akhir pekan / libur</span>
+    </span>
+    <button type="button" class="btn tiny danger-ghost" id="btnClear" hidden>Hapus Semua</button>
+  </div>
+</section>
+
+<main class="wrap">
+  <div class="gantt" id="gantt">
+    <div class="gantt-left" id="ganttLeft">
+      <div class="gantt-left-head">
+        <span class="col-title">Daftar Tugas</span>
+        <span class="muted" id="leftCount"></span>
+      </div>
+      <div class="gantt-left-body" id="leftBody"></div>
+    </div>
+    <div class="gantt-right" id="rightPane" tabindex="0" aria-label="Timeline Gantt">
+      <div class="gantt-inner" id="ganttInner">
+        <div class="gantt-head" id="ganttHead"></div>
+        <div class="gantt-rows" id="ganttRows"></div>
+        <div class="today-line" id="todayLine" hidden></div>
+      </div>
+    </div>
+    <div class="empty-overlay" id="emptyOverlay" hidden>
+      <div class="empty-card">
+        <h2>Belum ada tugas</h2>
+        <p>Tambahkan tugas pertama Anda, atau muat contoh data untuk melihat tampilan Gantt Chart.</p>
+        <div class="empty-actions">
+          <button type="button" class="btn primary" id="btnEmptyAdd">Tambah Tugas</button>
+          <button type="button" class="btn ghost" id="btnSample">Muat Contoh Data</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="hint-bar">Klik nama tugas atau batang Gantt untuk mengubah &middot; tombol <b>+</b> untuk menambah sub-tugas &middot; garis ungu = hubungan predecessor (FS/SS) &middot; hari kerja mengikuti Kalender Proyek</p>
+</main>
+
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <h2 id="modalTitle">Tambah Tugas</h2>
+      <button type="button" class="icon-btn" id="btnClose" aria-label="Tutup">&#10005;</button>
+    </div>
+    <form id="taskForm" novalidate>
+      <div class="field">
+        <label for="fName">Nama tugas</label>
+        <input type="text" id="fName" maxlength="120" autocomplete="off" placeholder="Contoh: Desain antarmuka">
+        <p class="field-error" id="errName" hidden></p>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="fStart">Tanggal mulai</label>
+          <input type="date" id="fStart">
+          <p class="field-error" id="errStart" hidden></p>
+        </div>
+        <div class="field">
+          <label for="fDuration">Durasi (hari kerja)</label>
+          <input type="number" id="fDuration" min="1" max="365" step="1" value="3">
+          <p class="field-error" id="errDuration" hidden></p>
+        </div>
+      </div>
+      <p class="preview" id="datePreview"></p>
+      <div class="grid-2">
+        <div class="field">
+          <label for="fPriority">Prioritas</label>
+          <select id="fPriority">
+            <option value="rendah">Rendah</option>
+            <option value="sedang" selected>Sedang</option>
+            <option value="tinggi">Tinggi</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fParent">Tugas induk</label>
+          <select id="fParent"><option value="">&#8212; Tugas utama (tanpa induk) &#8212;</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Predecessors (tugas pendahulu)</label>
+        <div class="pred-list" id="predList"></div>
+        <button type="button" class="btn tiny ghost pred-add" id="btnAddPred">+ Tambah pendahulu</button>
+        <p class="field-error" id="errPred" hidden></p>
+        <p class="hint-text">FS = mulai setelah pendahulu selesai &middot; SS = mulai bersamaan dengan pendahulu &middot; jeda dihitung dalam hari kerja.</p>
+      </div>
+      <div class="field">
+        <label>Alokasi anggota</label>
+        <div class="res-list" id="resourceList"></div>
+      </div>
+      <div class="field">
+        <label for="fColor">Warna indikator</label>
+        <div class="color-row">
+          <div class="swatches" id="swatches"></div>
+          <input type="color" id="fColor" value="#3b82f6" aria-label="Warna khusus">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" id="btnCancel">Batal</button>
+        <button type="submit" class="btn primary" id="btnSave">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="calOverlay" hidden>
+  <div class="modal cal-modal" role="dialog" aria-modal="true" aria-labelledby="calTitle">
+    <div class="modal-head">
+      <h2 id="calTitle">Kalender Proyek</h2>
+      <button type="button" class="icon-btn" id="btnCalClose" aria-label="Tutup">&#10005;</button>
+    </div>
+    <div class="cal-body">
+      <div class="field">
+        <label>Hari akhir pekan (bukan hari kerja)</label>
+        <div class="weekend-grid" id="weekendGrid"></div>
+        <p class="hint-text">Hari kerja: <strong id="workdaySummary"></strong></p>
+      </div>
+      <div class="field">
+        <label>Hari libur khusus</label>
+        <div class="holiday-form">
+          <input type="date" id="fHolidayDate" aria-label="Tanggal libur">
+          <input type="text" id="fHolidayName" maxlength="60" placeholder="Nama libur (opsional)" aria-label="Nama libur">
+          <button type="button" class="btn tiny primary" id="btnAddHoliday">Tambah</button>
+        </div>
+        <p class="field-error" id="errHoliday" hidden></p>
+        <ul class="holiday-list" id="holidayList"></ul>
+      </div>
+      <p class="hint-text">Perubahan langsung disimpan. Akhir pekan dan hari libur tidak dihitung saat menghitung durasi, jeda predecessor, dan tanggal selesai.</p>
+      <div class="modal-actions">
+        <button type="button" class="btn primary" id="btnCalDone">Selesai</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="teamOverlay" hidden>
+  <div class="modal team-modal" role="dialog" aria-modal="true" aria-labelledby="teamTitle">
+    <div class="modal-head">
+      <h2 id="teamTitle">Tim Proyek</h2>
+      <button type="button" class="icon-btn" id="btnTeamClose" aria-label="Tutup">&#10005;</button>
+    </div>
+    <div class="cal-body">
+      <div class="field">
+        <label for="fMemberName">Nama anggota</label>
+        <input type="text" id="fMemberName" maxlength="80" autocomplete="off" placeholder="Contoh: Budi Santoso">
+        <p class="field-error" id="errMemberName" hidden></p>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="fMemberEmail">Email</label>
+          <input type="email" id="fMemberEmail" maxlength="120" autocomplete="off" placeholder="nama@perusahaan.com">
+          <p class="field-error" id="errMemberEmail" hidden></p>
+        </div>
+        <div class="field">
+          <label for="fMemberRole">Peran</label>
+          <input type="text" id="fMemberRole" maxlength="60" autocomplete="off" placeholder="Contoh: Developer">
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label for="fMemberSalary">Gaji per bulan (Rp)</label>
+          <input type="number" id="fMemberSalary" min="0" step="1000" placeholder="8500000">
+          <p class="field-error" id="errMemberSalary" hidden></p>
+        </div>
+        <div class="field member-buttons">
+          <button type="button" class="btn primary" id="btnMemberSave">Tambah Anggota</button>
+          <button type="button" class="btn ghost" id="btnMemberCancel" hidden>Batal Edit</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Anggota terdaftar (<span id="memberCount">0</span>)</label>
+        <ul class="member-list" id="memberList"></ul>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn primary" id="btnTeamDone">Selesai</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="analysisOverlay" hidden>
+  <div class="modal analysis-modal" role="dialog" aria-modal="true" aria-labelledby="analysisTitle">
+    <div class="modal-head">
+      <h2 id="analysisTitle">Analisis Proyek</h2>
+      <button type="button" class="icon-btn" id="btnAnalysisClose" aria-label="Tutup">&#10005;</button>
+    </div>
+    <div class="cal-body">
+      <div class="analysis-summary" id="analysisSummary"></div>
+      <h3 class="section-title">Critical Path</h3>
+      <div class="table-wrap">
+        <table class="crit-table">
+          <thead><tr><th>Tugas</th><th>Mulai</th><th>Selesai</th><th>Durasi</th><th>Float</th></tr></thead>
+          <tbody id="criticalBody"></tbody>
+        </table>
+      </div>
+      <p class="hint-text">Tugas kritis (float 0) tidak dapat ditunda tanpa menunda seluruh proyek. Batang bertanda merah di Gantt Chart adalah jalur kritis.</p>
+      <h3 class="section-title">Diagram PERT</h3>
+      <div class="pert-box" id="pertBox"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn primary" id="btnAnalysisDone">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<noscript><p class="noscript">Aplikasi ini membutuhkan JavaScript agar dapat berjalan.</p></noscript>
+<script src="app.js"></script>
+</body>
+</html>
